@@ -3,7 +3,16 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
-dotenv.config();
+const envConfig = dotenv.config({ path: '.env.local', override: true });
+if (envConfig.error) {
+  dotenv.config({ override: true });
+}
+
+console.log('Loaded API env:', {
+  ADMIN_USER: process.env.ADMIN_USER ? '***' : null,
+  DATABASE_URL: process.env.DATABASE_URL,
+});
+
 const app = express();
 const prisma = new PrismaClient();
 
