@@ -16,7 +16,22 @@ console.log('Loaded API env:', {
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    : [
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://theomprajapati.com',
+        'https://admin.theomprajapati.com',
+      ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 const ADMIN_USER = process.env.ADMIN_USER;
