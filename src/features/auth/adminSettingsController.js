@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { AuthenticationError, ValidationError } from '../../errors/index.js';
+import { AuthenticationError, BadRequestError } from '../../errors/index.js';
 import { BCRYPT_SALT_ROUNDS, ADMIN_JWT_EXPIRY } from '../../config/constants.js';
 import { signToken } from '../../utils/jwt.js';
 import prisma from '../../shared/database.js';
@@ -10,7 +10,7 @@ export async function updateAdminCredentials(req, res) {
   const username = req.user?.username; // From adminMiddleware
 
   if (!currentPassword || !newUsername || !newPassword) {
-    throw new ValidationError('currentPassword, newUsername, and newPassword are required');
+    throw new BadRequestError('currentPassword, newUsername, and newPassword are required');
   }
 
   const adminUser = await prisma.adminUser.findUnique({
