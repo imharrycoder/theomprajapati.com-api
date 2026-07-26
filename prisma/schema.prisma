@@ -92,4 +92,6 @@ model AdminUser {
   id       Int    @id @default(autoincrement())
   username String @unique @db.VarChar(100)
   password String @db.VarChar(255)
+
+  @@map("admin_users")
 }
