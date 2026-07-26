@@ -12,6 +12,7 @@ import blogRouter from './features/blogs/blogRoutes.js';
 import serviceRouter from './features/services/serviceRoutes.js';
 import videoRouter from './features/videos/videoRoutes.js';
 import siteContentRouter from './features/siteContent/siteContentRoutes.js';
+import subscriptionRouter from './features/subscriptions/subscriptionRoutes.js';
 
 /**
  * Create and configure the Express application.
@@ -39,6 +40,7 @@ function createApp() {
   app.use(serviceRouter);
   app.use(videoRouter);
   app.use(siteContentRouter);
+  app.use(subscriptionRouter);
 
   // Centralized error handling — must be registered last
   app.use(errorHandler);

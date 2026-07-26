@@ -21,42 +21,36 @@ async function main() {
   await prisma.siteContent.deleteMany();
   await prisma.user.deleteMany();
 
-  await Promise.all(
-    data.blogPosts.map((post) =>
-      prisma.blogPost.create({
-        data: {
-          slug: post.slug,
-          title: post.title,
-          excerpt: post.excerpt,
-          category: post.category,
-          date: new Date(post.date),
-          readTime: post.readTime,
-          author: post.author,
-          premium: post.premium,
-          featured: post.featured,
-          tags: JSON.stringify(post.tags),
-          content: JSON.stringify(post.content),
-        },
-      })
-    )
-  );
+  for (const post of data.blogPosts) {
+    await prisma.blogPost.create({
+      data: {
+        slug: post.slug,
+        title: post.title,
+        excerpt: post.excerpt,
+        category: post.category,
+        date: new Date(post.date),
+        readTime: post.readTime,
+        author: post.author,
+        premium: post.premium,
+        featured: post.featured,
+        tags: JSON.stringify(post.tags),
+        content: JSON.stringify(post.content),
+      },
+    });
+  }
 
-  await Promise.all(
-    data.services.map((service) =>
-      prisma.service.create({ data: service })
-    )
-  );
+  for (const service of data.services) {
+    await prisma.service.create({ data: service });
+  }
 
-  await Promise.all(
-    data.videos.map((video) =>
-      prisma.video.create({
-        data: {
-          ...video,
-          publishDate: new Date(video.publishDate),
-        },
-      })
-    )
-  );
+  for (const video of data.videos) {
+    await prisma.video.create({
+      data: {
+        ...video,
+        publishDate: new Date(video.publishDate),
+      },
+    });
+  }
 
   if (data.siteContent) {
     await prisma.siteContent.create({

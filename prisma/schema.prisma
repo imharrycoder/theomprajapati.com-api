@@ -66,4 +66,24 @@ model User {
   emailVerified Boolean   @default(false)
   createdAt     DateTime  @default(now())
   lastLogin     DateTime?
+
+  subscriptionPlan      String    @default("NONE") @db.VarChar(50)
+  subscriptionExpiresAt DateTime?
+  razorpayCustomerId    String?   @db.VarChar(255)
+  payments              Payment[]
+}
+
+model Payment {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  razorpayOrderId   String   @unique @db.VarChar(255)
+  razorpayPaymentId String?  @unique @db.VarChar(255)
+  razorpaySignature String?  @db.VarChar(500)
+  amount            Int
+  currency          String   @default("INR") @db.VarChar(10)
+  status            String   @default("CREATED") @db.VarChar(50)
+  plan              String   @db.VarChar(50)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
 }
