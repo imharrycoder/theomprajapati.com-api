@@ -24,7 +24,11 @@ function errorHandler(err, req, res, _next) {
     method: req.method,
   });
 
-  return res.status(500).json({ error: 'Internal Server Error' });
+  return res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+  });
 }
 
 export default errorHandler;
