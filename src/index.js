@@ -20,15 +20,32 @@ const app = express();
 const prisma = new PrismaClient();
 const otpStore = new Map();
 
+const defaultCorsOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:4173',
+  'http://localhost:4174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:4173',
+  'http://127.0.0.1:4174',
+  'https://theomprajapati.com',
+  'https://www.theomprajapati.com',
+  'https://admin.theomprajapati.com',
+];
+
+const allowedCorsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : defaultCorsOrigins;
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
-    : [
-        'http://localhost:5173',
-        'http://localhost:4173',
-        'https://theomprajapati.com',
-        'https://admin.theomprajapati.com',
-      ],
+  origin(origin, callback) {
+    if (!origin || allowedCorsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -99,7 +116,10 @@ app.get('/blogPosts', async (req, res) => {
 
 app.get('/blogPosts/:slug', async (req, res) => {
   const { slug } = req.params;
-  const post = await prisma.blogPost.findUnique({ where: { slug } });
+  const isNumericId = /^\d+$/.test(slug);
+  const post = await prisma.blogPost.findUnique({
+    where: isNumericId ? { id: Number(slug) } : { slug },
+  });
   if (!post) throw new NotFoundError('Blog post not found');
   return res.json(formatBlogPost(post));
 });
@@ -144,6 +164,44 @@ function formatBlogPost(post) {
     ...post,
     tags: JSON.parse(post.tags),
     content: JSON.parse(post.content),
+  };
+}
+
+function parseJsonField(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function serializeSiteContent(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new BadRequestError('Site content must be a JSON object');
+  }
+
+  return JSON.stringify(payload);
+}
+
+function formatSiteContent(record) {
+  return record ? parseJsonField(record.value, {}) : {};
+}
+
+function serializeVideo(payload) {
+  const { title, thumbnail, platform, videoUrl, description, publishDate, featured } = payload;
+
+  if (!title || !thumbnail || !platform || !videoUrl || !description || !publishDate) {
+    throw new BadRequestError('All video fields must be provided');
+  }
+
+  return {
+    title,
+    thumbnail,
+    platform,
+    videoUrl,
+    description,
+    publishDate: new Date(publishDate),
+    featured: Boolean(featured),
   };
 }
 
@@ -300,6 +358,15 @@ app.delete('/services/:id', async (req, res) => {
   return res.status(200).json({ message: 'Service deleted successfully' });
 });
 
+app.get('/videos/featured', async (req, res) => {
+  const videos = await prisma.video.findMany({
+    where: { featured: true },
+    orderBy: { publishDate: 'desc' },
+    take: 3,
+  });
+  return res.json(videos);
+});
+
 app.get('/videos', async (req, res) => {
   const videos = await prisma.video.findMany();
   return res.json(videos);
@@ -312,18 +379,37 @@ app.get('/videos/:id', async (req, res) => {
 });
 
 app.post('/videos', async (req, res) => {
-  const video = await prisma.video.create({ data: req.body });
+  const data = serializeVideo(req.body);
+  const video = await prisma.video.create({ data });
   return res.status(201).json({ ...video, message: 'Video created successfully' });
 });
 
 app.put('/videos/:id', async (req, res) => {
-  const video = await prisma.video.update({ where: { id: Number(req.params.id) }, data: req.body });
+  const { id } = req.params;
+  const data = serializeVideo(req.body);
+  const video = await prisma.video.update({ where: { id: Number(id) }, data });
   return res.json({ ...video, message: 'Video updated successfully' });
 });
 
 app.delete('/videos/:id', async (req, res) => {
   await prisma.video.delete({ where: { id: Number(req.params.id) } });
   return res.status(200).json({ message: 'Video deleted successfully' });
+});
+
+app.get('/site-content', async (req, res) => {
+  const record = await prisma.siteContent.findUnique({ where: { key: 'home' } });
+  return res.json(formatSiteContent(record));
+});
+
+app.put('/site-content', async (req, res) => {
+  const value = serializeSiteContent(req.body);
+  const record = await prisma.siteContent.upsert({
+    where: { key: 'home' },
+    update: { value },
+    create: { key: 'home', value },
+  });
+
+  return res.json({ ...formatSiteContent(record), message: 'Site content updated successfully' });
 });
 
 // Error Handling Middleware

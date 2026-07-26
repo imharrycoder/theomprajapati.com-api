@@ -3,35 +3,67 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model BlogPost {
   id        Int      @id @default(autoincrement())
-  slug      String   @unique
-  title     String
-  excerpt   String
-  category  String
+  slug      String   @unique @db.VarChar(255)
+  title     String   @db.VarChar(500)
+  excerpt   String   @db.Text
+  category  String   @db.VarChar(100)
   date      DateTime
-  readTime  String
-  author    String
+  readTime  String   @db.VarChar(50)
+  author    String   @db.VarChar(100)
   premium   Boolean  @default(false)
   featured  Boolean  @default(false)
-  tags      String
-  content   String
+  tags      String   @db.Text
+  content   String   @db.LongText
 }
 
 model Service {
   id          Int    @id @default(autoincrement())
-  title       String
-  category    String @default("")
-  description String
+  title       String @db.VarChar(255)
+  category    String @default("") @db.VarChar(100)
+  description String @db.Text
 }
 
 model Video {
-  id       Int    @id @default(autoincrement())
-  title    String
-  category String
-  duration String
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(500)
+  thumbnail   String   @db.VarChar(1000)
+  platform    String   @db.VarChar(50)
+  videoUrl    String   @unique @db.VarChar(1000)
+  description String   @db.Text
+  publishDate DateTime
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteContent {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.LongText
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  name          String    @db.VarChar(255)
+  contact       String    @db.VarChar(50)
+  instaId       String?   @db.VarChar(255)
+  city          String    @db.VarChar(100)
+  state         String    @db.VarChar(100)
+  profession    String    @db.VarChar(255)
+  location      String?   @db.VarChar(255)
+  device        String?   @db.VarChar(255)
+  token         String?   @unique @db.VarChar(500)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  lastLogin     DateTime?
 }

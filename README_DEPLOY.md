@@ -2,11 +2,11 @@
 
 ## Render Backend
 
-This backend is intended to run on Render with PostgreSQL.
+This backend currently uses the checked-in SQLite Prisma schema and migrations.
 
 ### Required environment variables
 
-- `DATABASE_URL` - PostgreSQL connection string, from Render database.
+- `DATABASE_URL` - SQLite connection string, for example `file:./dev.db`.
 - `ADMIN_USER` - admin username for the login endpoint.
 - `ADMIN_PASS` - admin password for the login endpoint.
 
@@ -19,10 +19,10 @@ This backend is intended to run on Render with PostgreSQL.
 
 ### Local development
 
-Use PostgreSQL locally or via Render. Set `.env` to a local Postgres connection string:
+Set `.env.local` to a local SQLite connection string:
 
 ```
-DATABASE_URL="postgresql://user:password@localhost:5432/theomprajapati"
+DATABASE_URL="file:./dev.db"
 ADMIN_USER=admin
 ADMIN_PASS=password
 ```
@@ -32,12 +32,12 @@ Then run:
 ```bash
 cd theomprajapati.com-api
 npm install
-npx prisma migrate dev --name local_dev
+npx prisma migrate dev
 npm run seed
 npm run dev
 ```
 
-If you do not have local PostgreSQL installed, deploy the backend to Render and use the Render database instead.
+If you switch this project to PostgreSQL later, update `prisma/schema.prisma`, regenerate the migrations for PostgreSQL, and then use a PostgreSQL `DATABASE_URL`.
 
 ## Vercel Frontends
 

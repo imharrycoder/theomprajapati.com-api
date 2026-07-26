@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+
+const envConfig = dotenv.config({ path: '.env.local', override: true });
+if (envConfig.error) {
+  dotenv.config({ override: true });
+}
 
 const prisma = new PrismaClient();
 
@@ -12,6 +18,8 @@ async function main() {
   await prisma.blogPost.deleteMany();
   await prisma.service.deleteMany();
   await prisma.video.deleteMany();
+  await prisma.siteContent.deleteMany();
+  await prisma.user.deleteMany();
 
   await Promise.all(
     data.blogPosts.map((post) =>
@@ -41,9 +49,23 @@ async function main() {
 
   await Promise.all(
     data.videos.map((video) =>
-      prisma.video.create({ data: video })
+      prisma.video.create({
+        data: {
+          ...video,
+          publishDate: new Date(video.publishDate),
+        },
+      })
     )
   );
+
+  if (data.siteContent) {
+    await prisma.siteContent.create({
+      data: {
+        key: 'home',
+        value: JSON.stringify(data.siteContent),
+      },
+    });
+  }
 
   console.log('Seed completed');
 }
