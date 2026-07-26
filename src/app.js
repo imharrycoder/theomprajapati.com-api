@@ -13,6 +13,7 @@ import serviceRouter from './features/services/serviceRoutes.js';
 import videoRouter from './features/videos/videoRoutes.js';
 import siteContentRouter from './features/siteContent/siteContentRoutes.js';
 import subscriptionRouter from './features/subscriptions/subscriptionRoutes.js';
+import adminSettingsRouter from './features/auth/adminSettingsRoutes.js';
 
 /**
  * Create and configure the Express application.
@@ -41,6 +42,7 @@ function createApp() {
   app.use(videoRouter);
   app.use(siteContentRouter);
   app.use(subscriptionRouter);
+  app.use(adminSettingsRouter);
 
   // Centralized error handling — must be registered last
   app.use(errorHandler);

@@ -1,11 +1,12 @@
 import bcrypt from 'bcryptjs';
 import { AuthenticationError } from '../../errors/index.js';
-import { getRequiredEnv } from '../../config/environment.js';
+import { getOptionalEnv } from '../../config/environment.js';
 import { ADMIN_JWT_EXPIRY, BCRYPT_SALT_ROUNDS } from '../../config/constants.js';
 import { signToken } from '../../utils/jwt.js';
 import { generateOtp, storeOtp } from './authService.js';
 import { validateSendOtpPayload } from './authValidator.js';
 import logger from '../../shared/logger.js';
+import prisma from '../../shared/database.js';
 
 /**
  * POST /admin/login
@@ -13,11 +14,35 @@ import logger from '../../shared/logger.js';
  */
 export async function adminLogin(req, res) {
   const { username, password } = req.body;
-  const adminUser = getRequiredEnv('ADMIN_USER');
-  const adminPass = getRequiredEnv('ADMIN_PASS');
+  
+  let adminUser = await prisma.adminUser.findUnique({
+    where: { username }
+  });
 
-  if (username !== adminUser || password !== adminPass) {
-    throw new AuthenticationError('Invalid credentials');
+  if (!adminUser) {
+    // Fallback to environment variables or defaults if DB is empty for this username
+    const fallbackUser = getOptionalEnv('ADMIN_USER', 'admin');
+    const fallbackPass = getOptionalEnv('ADMIN_PASS', 'Om@2003');
+
+    if (username === fallbackUser && password === fallbackPass) {
+      // Create the admin user in the DB immediately so future logins use DB
+      const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+      adminUser = await prisma.adminUser.create({
+        data: {
+          username,
+          password: hashedPassword
+        }
+      });
+      logger.info(`Initialized admin user '${username}' in database from fallback credentials.`);
+    } else {
+      throw new AuthenticationError('Invalid credentials');
+    }
+  } else {
+    // Verify against DB password
+    const isMatch = await bcrypt.compare(password, adminUser.password);
+    if (!isMatch) {
+      throw new AuthenticationError('Invalid credentials');
+    }
   }
 
   const token = signToken({ role: 'admin', username }, ADMIN_JWT_EXPIRY);
