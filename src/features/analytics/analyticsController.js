@@ -222,12 +222,21 @@ export const getPageSpeedInsights = async (req, res) => {
   const { strategy = 'mobile' } = req.query; // 'mobile' or 'desktop'
   
   try {
-    // Dynamic import for fetch since Node.js 18+ has it built-in, but just in case
-    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}&category=PERFORMANCE&category=ACCESSIBILITY&category=BEST_PRACTICES&category=SEO`;
+    const apiKey = getOptionalEnv('GOOGLE_API_KEY') || getOptionalEnv('GEMINI_API_KEY') || '';
+    let apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}&category=PERFORMANCE&category=ACCESSIBILITY&category=BEST_PRACTICES&category=SEO`;
     
+    if (apiKey) {
+      apiUrl += `&key=${apiKey}`;
+    }
+
     const response = await fetch(apiUrl);
+    
     if (!response.ok) {
-      throw new Error(`PageSpeed API responded with ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      const isRateLimit = response.status === 429;
+      throw new Error(isRateLimit 
+        ? 'Google PageSpeed API rate limit exceeded. Please configure an API key.' 
+        : errorData?.error?.message || `PageSpeed API responded with ${response.status}`);
     }
     
     const data = await response.json();
@@ -255,6 +264,7 @@ export const getPageSpeedInsights = async (req, res) => {
     });
   } catch (err) {
     logger.error('PageSpeed API Error:', err);
-    res.status(500).json({ error: 'Failed to fetch PageSpeed data', details: err.message });
+    const statusCode = err.message.includes('rate limit exceeded') ? 429 : 500;
+    res.status(statusCode).json({ error: err.message, details: err.message });
   }
 };
