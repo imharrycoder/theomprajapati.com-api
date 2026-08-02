@@ -222,7 +222,7 @@ export const getPageSpeedInsights = async (req, res) => {
   const { strategy = 'mobile' } = req.query; // 'mobile' or 'desktop'
   
   try {
-    const apiKey = getOptionalEnv('GOOGLE_API_KEY') || getOptionalEnv('GEMINI_API_KEY') || '';
+    const apiKey = getOptionalEnv('GOOGLE_API_KEY', '');
     let apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}&category=PERFORMANCE&category=ACCESSIBILITY&category=BEST_PRACTICES&category=SEO`;
     
     if (apiKey) {
