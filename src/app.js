@@ -15,6 +15,7 @@ import siteContentRouter from './features/siteContent/siteContentRoutes.js';
 import subscriptionRouter from './features/subscriptions/subscriptionRoutes.js';
 import adminSettingsRouter from './features/auth/adminSettingsRoutes.js';
 import projectCostRouter from './features/projectCost/projectCostRoutes.js';
+import analyticsRouter from './features/analytics/analyticsRoutes.js';
 
 /**
  * Create and configure the Express application.
@@ -45,6 +46,7 @@ function createApp() {
   app.use(subscriptionRouter);
   app.use(adminSettingsRouter);
   app.use(projectCostRouter);
+  app.use(analyticsRouter);
 
   // Centralized error handling — must be registered last
   app.use(errorHandler);
