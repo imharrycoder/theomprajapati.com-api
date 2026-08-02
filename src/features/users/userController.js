@@ -1,5 +1,6 @@
-import { registerUser, loginUser } from './userService.js';
+import { registerUser, loginUser, updateUserProfile, changeUserPassword } from './userService.js';
 import { formatUser } from './userSerializer.js';
+import prisma from '../../shared/database.js';
 
 /**
  * POST /users/register
@@ -25,7 +26,24 @@ export async function handleGetCurrentUser(req, res) {
   return res.json(formatUser(req.user));
 }
 
-import prisma from '../../shared/database.js';
+/**
+ * PUT /users/profile
+ * Update the logged-in user's name, email, or profile photo.
+ */
+export async function handleUpdateProfile(req, res) {
+  const updatedUser = await updateUserProfile(req.user.id, req.body);
+  return res.json({ ...formatUser(updatedUser), message: 'Profile updated successfully' });
+}
+
+/**
+ * PUT /users/password
+ * Change the logged-in user's password.
+ */
+export async function handleChangePassword(req, res) {
+  const { oldPassword, newPassword } = req.body;
+  await changeUserPassword(req.user.id, oldPassword, newPassword);
+  return res.json({ message: 'Password changed successfully' });
+}
 
 /**
  * GET /admin/users

@@ -5,6 +5,7 @@ import { ADMIN_JWT_EXPIRY, BCRYPT_SALT_ROUNDS } from '../../config/constants.js'
 import { signToken } from '../../utils/jwt.js';
 import { generateOtp, storeOtp } from './authService.js';
 import { validateSendOtpPayload } from './authValidator.js';
+import { sendOtpEmail } from '../../shared/emailService.js';
 import logger from '../../shared/logger.js';
 import prisma from '../../shared/database.js';
 
@@ -52,8 +53,7 @@ export async function adminLogin(req, res) {
 
 /**
  * POST /auth/send-otp
- * Generate and store an OTP for the given email or contact.
- * OTP is only returned in the response during development.
+ * Generate and store an OTP for the given email, then send it via email.
  */
 export async function sendOtp(req, res) {
   const { email, contact } = validateSendOtpPayload(req.body);
@@ -64,12 +64,17 @@ export async function sendOtp(req, res) {
 
   logger.info(`OTP generated for ${key}`);
 
-  const response = { message: 'OTP sent successfully' };
-
-  // Only include OTP in response during development
-  if (process.env.NODE_ENV !== 'production') {
-    response.otp = otp;
+  // Send real email if an email address is provided
+  if (email) {
+    const sent = await sendOtpEmail(email, otp);
+    if (!sent) {
+      // If SMTP is not configured, fall back to returning OTP in dev
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({ message: 'OTP generated (email not configured)', otp });
+      }
+      return res.status(500).json({ error: 'Failed to send OTP email. Please try again.' });
+    }
   }
 
-  return res.json(response);
+  return res.json({ message: 'OTP sent to your email. Check your inbox.' });
 }

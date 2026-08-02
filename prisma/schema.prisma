@@ -8,18 +8,18 @@ datasource db {
 }
 
 model BlogPost {
-  id        Int      @id @default(autoincrement())
-  slug      String   @unique @db.VarChar(255)
-  title     String   @db.VarChar(500)
-  excerpt   String   @db.Text
-  category  String   @db.VarChar(100)
-  date      DateTime
-  readTime  String   @db.VarChar(50)
-  author    String   @db.VarChar(100)
-  premium   Boolean  @default(false)
-  featured  Boolean  @default(false)
-  tags      String   @db.Text
-  content   String   @db.LongText
+  id       Int      @id @default(autoincrement())
+  slug     String   @unique @db.VarChar(255)
+  title    String   @db.VarChar(500)
+  excerpt  String   @db.Text
+  category String   @db.VarChar(100)
+  date     DateTime
+  readTime String   @db.VarChar(50)
+  author   String   @db.VarChar(100)
+  premium  Boolean  @default(false)
+  featured Boolean  @default(false)
+  tags     String   @db.Text
+  content  String   @db.LongText
 
   @@map("BlogPost")
 }
@@ -63,7 +63,7 @@ model User {
   email         String    @unique @db.VarChar(255)
   password      String    @db.VarChar(255)
   name          String    @db.VarChar(255)
-  contact       String    @db.VarChar(50)
+  contact       String    @unique @db.VarChar(50)
   instaId       String?   @db.VarChar(255)
   city          String    @db.VarChar(100)
   state         String    @db.VarChar(100)
@@ -72,6 +72,7 @@ model User {
   device        String?   @db.VarChar(255)
   token         String?   @unique @db.VarChar(500)
   emailVerified Boolean   @default(false)
+  profilePhoto  String?   @db.LongText
   createdAt     DateTime  @default(now())
   lastLogin     DateTime?
 
