@@ -107,3 +107,30 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+model ProjectLead {
+  id                Int      @id @default(autoincrement())
+  name              String?  @db.VarChar(255)
+  email             String?  @db.VarChar(255)
+  phone             String?  @db.VarChar(50)
+  company           String?  @db.VarChar(255)
+  servicesSelected  String   @db.LongText
+  aiQuestions       String   @db.LongText
+  aiAnswers         String   @db.LongText
+  aiSummary         String?  @db.LongText
+  aiConversationLog String?  @db.LongText
+  complexity        String   @db.VarChar(50)
+  estimatedTimeline String   @db.LongText
+  developerCost     Int
+  thirdPartyCost    Int
+  recurringCost     Int      @default(0)
+  totalCost         Int
+  deliverables      String   @db.LongText
+  recommendations   String?  @db.LongText
+  whatsappClicked   Boolean  @default(false)
+  pdfDownloaded     Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("ProjectLead")
+}
