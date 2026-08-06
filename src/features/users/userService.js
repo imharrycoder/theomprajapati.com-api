@@ -103,7 +103,7 @@ export async function loginUser(payload) {
  * Update user profile (name, email, profilePhoto).
  */
 export async function updateUserProfile(userId, payload) {
-  const { name, email, profilePhoto } = payload;
+  const { name, email, profilePhoto, username } = payload;
 
   const updateData = {};
 
@@ -124,14 +124,27 @@ export async function updateUserProfile(userId, payload) {
     updateData.profilePhoto = profilePhoto; // base64 string or null to remove
   }
 
+  if (username !== undefined) {
+    // If empty string, set it to null
+    updateData.username = username.trim() === '' ? null : username.trim();
+  }
+
   if (Object.keys(updateData).length === 0) {
     throw new BadRequestError('No fields to update');
   }
 
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: updateData,
-  });
+  let updatedUser;
+  try {
+    updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+  } catch (err) {
+    if (err.code === 'P2002' && err.meta?.target?.includes('username')) {
+      throw new ConflictError('This username is already taken. Please choose another one.');
+    }
+    throw err;
+  }
 
   return updatedUser;
 }

@@ -28,7 +28,7 @@ function createApp() {
   // Global middleware
   app.use(cors(corsOptions));
   app.options('*', cors(corsOptions));
-  app.use(express.json());
+  app.use(express.json({ limit: '5mb' }));
   app.use(generalRateLimiter);
 
   // Health check — should be before feature routes for monitoring tools
