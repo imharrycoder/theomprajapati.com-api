@@ -55,7 +55,9 @@ export async function sendOtpEmail(toEmail, otp) {
     return false;
   }
 
-  const fromEmail = getOptionalEnv('SMTP_EMAIL', 'onboarding@resend.dev');
+  // Resend strictly requires you to use onboarding@resend.dev unless you verify a custom domain.
+  // We cannot use the SMTP_EMAIL (e.g. a gmail address) as the sender.
+  const fromEmail = 'onboarding@resend.dev';
 
   const htmlContent = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #0a0a0a; border-radius: 16px; overflow: hidden; border: 1px solid #1a1a2e;">
