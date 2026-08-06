@@ -6,9 +6,8 @@ import logger from './logger.js';
 let transporter = null;
 let resendClient = null;
 
-/**
- * Lazily initialize the Nodemailer transporter.
- */
+/* 
+// Nodemailer SMTP fallback (commented out per request)
 function getTransporter() {
   if (transporter) return transporter;
 
@@ -29,6 +28,7 @@ function getTransporter() {
 
   return transporter;
 }
+*/
 
 function getResendClient() {
   if (resendClient) return resendClient;
@@ -48,11 +48,10 @@ function getResendClient() {
  * @param {string} otp - The 6-digit OTP code
  */
 export async function sendOtpEmail(toEmail, otp) {
-  const mailer = getTransporter();
   const resend = getResendClient();
 
-  if (!mailer && !resend) {
-    logger.warn(`Email not sent to ${toEmail} — Neither SMTP nor Resend is configured.`);
+  if (!resend) {
+    logger.warn(`Email not sent to ${toEmail} — Resend API key is not configured.`);
     return false;
   }
 
@@ -82,29 +81,31 @@ export async function sendOtpEmail(toEmail, otp) {
   `;
 
   try {
-    if (resend) {
-      // Use Resend
-      await resend.emails.send({
-        from: \`The Om Prajapati <\${fromEmail}>\`,
-        to: [toEmail],
-        subject: \`\${otp} — Your Verification Code\`,
-        html: htmlContent,
-      });
-      logger.info(\`OTP email sent to \${toEmail} via Resend\`);
-    } else {
-      // Use Nodemailer SMTP
+    // Use Resend exclusively
+    await resend.emails.send({
+      from: `The Om Prajapati <${fromEmail}>`,
+      to: [toEmail],
+      subject: `${otp} — Your Verification Code`,
+      html: htmlContent,
+    });
+    logger.info(`OTP email sent to ${toEmail} via Resend`);
+    
+    /* 
+    // SMTP fallback commented out
+    else {
       await mailer.sendMail({
-        from: \`"The Om Prajapati" <\${fromEmail}>\`,
+        from: `"The Om Prajapati" <${fromEmail}>`,
         to: toEmail,
-        subject: \`\${otp} — Your Verification Code\`,
+        subject: `${otp} — Your Verification Code`,
         html: htmlContent,
       });
-      logger.info(\`OTP email sent to \${toEmail} via SMTP\`);
+      logger.info(`OTP email sent to ${toEmail} via SMTP`);
     }
+    */
 
     return true;
   } catch (err) {
-    logger.error(\`Failed to send OTP email to \${toEmail}:\`, err.message);
+    logger.error(`Failed to send OTP email to ${toEmail}:`, err.message);
     return false;
   }
 }
