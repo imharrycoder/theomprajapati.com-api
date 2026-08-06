@@ -27,8 +27,9 @@ model BlogPost {
 model Service {
   id          Int    @id @default(autoincrement())
   title       String @db.VarChar(255)
-  category    String @default("") @db.VarChar(100)
-  description String @db.Text
+  category      String  @default("") @db.VarChar(100)
+  description   String  @db.Text
+  displayOnHome Boolean @default(true)
 
   @@map("Service")
 }

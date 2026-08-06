@@ -5,7 +5,7 @@ import { BadRequestError } from '../../errors/index.js';
  * Prevents raw, unsanitized req.body from reaching Prisma.
  */
 export function validateServicePayload(body) {
-  const { title, category, description } = body;
+  const { title, category, description, displayOnHome } = body;
 
   if (!title || typeof title !== 'string') {
     throw new BadRequestError('Service title is required');
@@ -19,5 +19,6 @@ export function validateServicePayload(body) {
     title: title.trim(),
     category: (category || '').trim(),
     description: description.trim(),
+    displayOnHome: typeof displayOnHome === 'boolean' ? displayOnHome : true,
   };
 }

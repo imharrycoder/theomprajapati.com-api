@@ -8,20 +8,25 @@ import { parsePaginationParams, buildPaginationQuery, buildPaginationMeta } from
  * Supports optional pagination via ?page=1&limit=10.
  */
 export async function listServices(req, res) {
-  const { page: pageParam, limit: limitParam } = req.query;
+  const { page: pageParam, limit: limitParam, home } = req.query;
+
+  let where = {};
+  if (home === 'true') {
+    where.displayOnHome = true;
+  }
 
   if (pageParam || limitParam) {
     const { page, limit } = parsePaginationParams(req.query);
     const { skip, take } = buildPaginationQuery(page, limit);
     const [services, total] = await Promise.all([
-      prisma.service.findMany({ skip, take }),
-      prisma.service.count(),
+      prisma.service.findMany({ where, skip, take }),
+      prisma.service.count({ where }),
     ]);
 
     return res.json({ data: services, meta: buildPaginationMeta(total, page, limit) });
   }
 
-  const services = await prisma.service.findMany();
+  const services = await prisma.service.findMany({ where });
   return res.json(services);
 }
 
