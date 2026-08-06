@@ -1,8 +1,10 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { getOptionalEnv } from '../config/environment.js';
 import logger from './logger.js';
 
 let transporter = null;
+let resendClient = null;
 
 /**
  * Lazily initialize the Nodemailer transporter.
@@ -14,7 +16,6 @@ function getTransporter() {
   const password = getOptionalEnv('SMTP_PASSWORD', '');
 
   if (!email || !password) {
-    logger.warn('SMTP_EMAIL or SMTP_PASSWORD not configured — emails will not be sent.');
     return null;
   }
 
@@ -29,6 +30,18 @@ function getTransporter() {
   return transporter;
 }
 
+function getResendClient() {
+  if (resendClient) return resendClient;
+  
+  const apiKey = getOptionalEnv('RESEND_API_KEY', '');
+  if (!apiKey) {
+    return null;
+  }
+
+  resendClient = new Resend(apiKey);
+  return resendClient;
+}
+
 /**
  * Send an OTP verification email.
  * @param {string} toEmail - Recipient email address
@@ -36,13 +49,14 @@ function getTransporter() {
  */
 export async function sendOtpEmail(toEmail, otp) {
   const mailer = getTransporter();
+  const resend = getResendClient();
 
-  if (!mailer) {
-    logger.warn(`Email not sent to ${toEmail} — SMTP not configured.`);
+  if (!mailer && !resend) {
+    logger.warn(`Email not sent to ${toEmail} — Neither SMTP nor Resend is configured.`);
     return false;
   }
 
-  const fromEmail = getOptionalEnv('SMTP_EMAIL', '');
+  const fromEmail = getOptionalEnv('SMTP_EMAIL', 'onboarding@resend.dev');
 
   const htmlContent = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #0a0a0a; border-radius: 16px; overflow: hidden; border: 1px solid #1a1a2e;">
@@ -68,17 +82,29 @@ export async function sendOtpEmail(toEmail, otp) {
   `;
 
   try {
-    await mailer.sendMail({
-      from: `"The Om Prajapati" <${fromEmail}>`,
-      to: toEmail,
-      subject: `${otp} — Your Verification Code`,
-      html: htmlContent,
-    });
+    if (resend) {
+      // Use Resend
+      await resend.emails.send({
+        from: \`The Om Prajapati <\${fromEmail}>\`,
+        to: [toEmail],
+        subject: \`\${otp} — Your Verification Code\`,
+        html: htmlContent,
+      });
+      logger.info(\`OTP email sent to \${toEmail} via Resend\`);
+    } else {
+      // Use Nodemailer SMTP
+      await mailer.sendMail({
+        from: \`"The Om Prajapati" <\${fromEmail}>\`,
+        to: toEmail,
+        subject: \`\${otp} — Your Verification Code\`,
+        html: htmlContent,
+      });
+      logger.info(\`OTP email sent to \${toEmail} via SMTP\`);
+    }
 
-    logger.info(`OTP email sent to ${toEmail}`);
     return true;
   } catch (err) {
-    logger.error(`Failed to send OTP email to ${toEmail}:`, err.message);
+    logger.error(\`Failed to send OTP email to \${toEmail}:\`, err.message);
     return false;
   }
 }
